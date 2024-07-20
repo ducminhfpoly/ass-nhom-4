@@ -1,5 +1,4 @@
 import axios from "axios";
-import { act } from "react-dom/test-utils";
 import baseURL from "../../../utils/baseURL";
 import {
   resetErrAction,
@@ -7,7 +6,7 @@ import {
 } from "../globalActions/globalActions";
 const { createAsyncThunk, createSlice } = require("@reduxjs/toolkit");
 
-//initalsState
+// Initial state
 const initialState = {
   products: [],
   product: {},
@@ -18,7 +17,7 @@ const initialState = {
   isDelete: false,
 };
 
-//create product action
+// Create product action
 export const createProductAction = createAsyncThunk(
   "product/create",
   async (payload, { rejectWithValue, getState, dispatch }) => {
@@ -42,7 +41,7 @@ export const createProductAction = createAsyncThunk(
           "Content-Type": "multipart/form-data",
         },
       };
-      //FormData
+      // FormData
       const formData = new FormData();
       formData.append("name", name);
       formData.append("description", description);
@@ -75,7 +74,7 @@ export const createProductAction = createAsyncThunk(
   }
 );
 
-//create product action
+// Update product action with validation
 export const updateProductAction = createAsyncThunk(
   "product/update",
   async (payload, { rejectWithValue, getState, dispatch }) => {
@@ -92,6 +91,27 @@ export const updateProductAction = createAsyncThunk(
         totalQty,
         id,
       } = payload;
+
+      // Validation
+      if (price < 0) {
+        return rejectWithValue("Price cannot be negative");
+      }
+      if (totalQty < 0) {
+        return rejectWithValue("Total quantity cannot be negative");
+      }
+      if (!name) {
+        return rejectWithValue("Name is required");
+      }
+      if (!description) {
+        return rejectWithValue("Description is required");
+      }
+      if (!category) {
+        return rejectWithValue("Category is required");
+      }
+      if (!brand) {
+        return rejectWithValue("Brand is required");
+      }
+
       const token = getState()?.users?.userAuth?.userInfo?.token;
       const config = {
         headers: {
@@ -115,12 +135,12 @@ export const updateProductAction = createAsyncThunk(
       );
       return data;
     } catch (error) {
-      return rejectWithValue(error?.response?.data);
+      return rejectWithValue(error?.response?.data || error.message);
     }
   }
 );
 
-//fetch products action
+// Fetch products action
 export const fetchProductsAction = createAsyncThunk(
   "product/list",
   async ({ url }, { rejectWithValue, getState, dispatch }) => {
@@ -141,7 +161,7 @@ export const fetchProductsAction = createAsyncThunk(
   }
 );
 
-//fetch product action
+// Fetch product action
 export const fetchProductAction = createAsyncThunk(
   "product/details",
   async (productId, { rejectWithValue, getState, dispatch }) => {
@@ -163,12 +183,13 @@ export const fetchProductAction = createAsyncThunk(
     }
   }
 );
-//slice
+
+// Slice
 const productSlice = createSlice({
   name: "products",
   initialState,
   extraReducers: (builder) => {
-    //create
+    // Create
     builder.addCase(createProductAction.pending, (state) => {
       state.loading = true;
     });
@@ -183,7 +204,7 @@ const productSlice = createSlice({
       state.isAdded = false;
       state.error = action.payload;
     });
-    //update
+    // Update
     builder.addCase(updateProductAction.pending, (state) => {
       state.loading = true;
     });
@@ -198,7 +219,7 @@ const productSlice = createSlice({
       state.isUpdated = false;
       state.error = action.payload;
     });
-    //fetch all
+    // Fetch all
     builder.addCase(fetchProductsAction.pending, (state) => {
       state.loading = true;
     });
@@ -213,7 +234,7 @@ const productSlice = createSlice({
       state.isAdded = false;
       state.error = action.payload;
     });
-    //fetch all
+    // Fetch single
     builder.addCase(fetchProductAction.pending, (state) => {
       state.loading = true;
     });
@@ -228,18 +249,18 @@ const productSlice = createSlice({
       state.isAdded = false;
       state.error = action.payload;
     });
-    //reset error
+    // Reset error
     builder.addCase(resetErrAction.pending, (state, action) => {
       state.error = null;
     });
-    //reset success
+    // Reset success
     builder.addCase(resetSuccessAction.pending, (state, action) => {
       state.isAdded = false;
     });
   },
 });
 
-//generate the reducer
+// Generate the reducer
 const productReducer = productSlice.reducer;
 
 export default productReducer;
